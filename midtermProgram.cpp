@@ -75,7 +75,7 @@ class Animal
         {
             return "Hyena";
         }
-        else if (origin.find("Zanibar") != string::npos || origin.find("KopeLion") != string::npos)
+        else if (origin.find("Zanzibar") != string::npos || origin.find("KopeLion") != string::npos)
         {
             return "Lion";
         }
