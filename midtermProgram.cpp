@@ -11,6 +11,8 @@ midtermProgram.cpp
 #include <map>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <iomanip>
 
 using std::string;
 using std::vector;
@@ -61,10 +63,12 @@ class Animal
     int weight;
     string origin;
     string id;
+    string birthDate;
+    string arrivalDate;
 
     public:
-    Animal(string species, string name, string gender, int age, string birthSeason, string color, int weight, string origin, string id) :
-    species(species), name(name), gender(gender), age(age), birthSeason(birthSeason), color(color), weight(weight), origin(origin), id(id) {}
+    Animal(string species, string name, string gender, int age, string birthSeason, string color, int weight, string origin, string id, string birthDate, string arrivalDate) :
+    species(species), name(name), gender(gender), age(age), birthSeason(birthSeason), color(color), weight(weight), origin(origin), id(id), birthDate(birthDate), arrivalDate(arrivalDate) {}
 
     string getSpecies() const {return species;}
     string getName() const {return name;}
@@ -74,7 +78,9 @@ class Animal
     string getColor() const {return color;}
     int getWeight() const {return weight;}
     string getOrigin() const {return origin;}
-    string getId() const {return id;}
+    string genUniqueID() const {return id;}
+    string genBirthDay() const {return birthDate;}
+    string getArrivalDate() const {return arrivalDate;}
 
     static string determineSpecies(const string& origin)
     {
@@ -230,7 +236,39 @@ class ZooReport
             // Get the next name for the species
             string name = namesRepo.getNextName(species);
 
-            animals.emplace_back(species, name, gender, age, birthSeason, color, weight, origin, id);
+            // Generate birth date based on birth season if available
+            std::time_t birthTimeT = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::hours(24 * 365 * age));
+            std::tm birthTm = *std::gmtime(&birthTimeT);
+
+            if (birthSeason == "spring") {
+                birthTm.tm_mon = 2; // March
+                birthTm.tm_mday = 15;
+            } else if (birthSeason == "summer") {
+                birthTm.tm_mon = 5; // June
+                birthTm.tm_mday = 15;
+            } else if (birthSeason == "fall") {
+                birthTm.tm_mon = 8; // September
+                birthTm.tm_mday = 15;
+            } else if (birthSeason == "winter") {
+                birthTm.tm_mon = 11; // December
+                birthTm.tm_mday = 15;
+            } else {
+                birthTm.tm_mon = 0; // January as default
+                birthTm.tm_mday = 1;
+            }
+
+            std::ostringstream birthDateStream;
+            birthDateStream << std::put_time(&birthTm, "%Y-%m-%d");
+            string birthDate = birthDateStream.str();
+
+            // Generate arrival date in ISO 8601 format
+            std::time_t arrivalTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+            std::tm* arrivalTm = std::gmtime(&arrivalTime);
+            std::ostringstream arrivalDateStream;
+            arrivalDateStream << std::put_time(arrivalTm, "%Y-%m-%d");
+            string arrivalDate = arrivalDateStream.str();
+
+            animals.emplace_back(species, name, gender, age, birthSeason, color, weight, origin, id, birthDate, arrivalDate);
         }
 
         file.close();
@@ -247,15 +285,14 @@ class ZooReport
 
         for(const auto& animal : animals)
         {
-            file << animal.getSpecies() << " Habitat:\n";
-            file << animal.getId() << "; ";
-            file << "Name: " << animal.getName() << "; ";
-            file << animal.getAge() << " years old; ";
-            file << "birth season " << animal.getBirthSeason() << "; ";
-            file << animal.getColor() << "; ";
-            file << animal.getGender() << "; ";
-            file << animal.getWeight() << " pounds;\n";
-            file << "from " << animal.getOrigin() << "\n\n";
+            file << animal.genUniqueID() << "; "
+                 << animal.getName() << "; "
+                 << "birth date " << animal.genBirthDay() << "; "
+                 << animal.getColor() << "; "
+                 << animal.getGender() << "; "
+                 << animal.getWeight() << " pounds; "
+                 << "from " << animal.getOrigin() << "; "
+                 << "arrived " << animal.getArrivalDate() << "\n\n";
         }
 
         file.close();
@@ -275,4 +312,4 @@ int main()
     return 0;
 }
 
-// I'm so glad this finally works!! :D
+// I'm so glad this finally works!! This should be the final change! :D
